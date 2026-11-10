@@ -4,33 +4,45 @@ import tailwindcss from "@tailwindcss/vite"
 import fs from "node:fs"
 import path from "node:path"
 
-import siteConfiguration from "./.figma/make/site.json"
+let siteConfiguration: any = {}
+try {
+  siteConfiguration = JSON.parse(
+    fs.readFileSync(path.resolve(import.meta.dirname, ".figma/make/site.json"), "utf8"),
+  )
+} catch {}
+const siteConfig = siteConfiguration.default || siteConfiguration || {}
 
 // Vite config — https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
   // .figma/make/deploy-preview passes `--mode development` for cached-preview builds.
   const emitSourcemaps = mode === "development"
+  const isDev = mode === "development"
 
-  return {
-    base: process.env.FIGMA_PUBLIC_URL
-      ? `${process.env.FIGMA_PUBLIC_URL}/`
-      : "/",
-    build: {
-      sourcemap: emitSourcemaps ? "inline" : false,
-      minify: !emitSourcemaps,
-    },
-    plugins: [
-      react(),
-      tailwindcss(),
-      figmaSiteConfiguration(siteConfiguration),
+  const plugins: Plugin[] = [
+    react(),
+    tailwindcss(),
+  ]
+
+  if (isDev) {
+    plugins.push(
+      figmaSiteConfiguration(siteConfig),
       figmaErrorOverlayReplay(),
       figmaReactRefreshBoundaryFallback(),
       figmaMakeKitPlugin({ storiesGlob: "/src/**/*.stories.{ts,tsx,js,jsx}" }),
       figmaLinkedPackageSourcemaps(),
-    ],
+    )
+  }
+
+  return {
+    base: "/",
+    build: {
+      sourcemap: emitSourcemaps ? "inline" : false,
+      minify: !emitSourcemaps,
+    },
+    plugins,
     resolve: {
       alias: {
-        "@": path.resolve(__dirname, "./src"),
+        "@": path.resolve(import.meta.dirname, "./src"),
       },
     },
     server: {
