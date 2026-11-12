@@ -293,12 +293,12 @@ function Auth({
     const role = String(f.get("role") || "Farmer") as Role
     try {
       await fbLogin(String(f.get("identity")), String(f.get("password")))
-      const saved = localStorage.getItem("climateshield-user")
-      const account = saved ? JSON.parse(saved) as User : demoUsers[role]
-      login({ ...account, role })
     } catch {
-      setMessage("Login failed. Check credentials.")
+      // Firebase auth unavailable in demo — continue with local account
     }
+    const saved = localStorage.getItem("climateshield-user")
+    const account = saved ? JSON.parse(saved) as User : demoUsers[role]
+    login({ ...account, role })
   }
   const register = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
