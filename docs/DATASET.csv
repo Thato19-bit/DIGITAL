@@ -1,0 +1,11 @@
+crop,area_ha,yield_t_ha,rainfall_mm,risk_score,premium_maloti,planting_window,soil_ph,nitrogen_level,irrigation_needed
+Maize,12,3.8,420,moderate,280,Mid-Oct to Mid-Nov,5.8,Low,Yes
+Beans,8,2.4,380,low,190,December,6.2,Medium,No
+Sorghum,10,3.1,350,moderate,220,December,6.0,Medium,No
+Maize,15,4.2,450,low,320,Mid-Oct to Mid-Nov,6.5,High,No
+Beans,6,1.8,300,high,140,December,5.4,Low,Yes
+Sorghum,12,2.9,330,moderate,200,Mid-Oct to Mid-Nov,5.9,Low,Yes
+Maize,8,2.1,280,high,160,Mid-Oct to Mid-Nov,5.1,Low,Yes
+Beans,10,3.0,400,low,240,December,6.8,High,No
+Sorghum,14,3.5,370,moderate,260,Mid-Oct to Mid-Nov,6.1,Medium,No
+Maize,20,5.0,480,low,400,Mid-Oct to Mid-Nov,6.6,High,No

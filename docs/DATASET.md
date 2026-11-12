@@ -2,6 +2,15 @@
 
 Curated Lesotho farming dataset used to train/evaluate the AI assistant and yield model.
 
+## Excel-ready files (open in Excel)
+
+| File | Description |
+|------|-------------|
+| `DATASET.csv` | Farming dataset — crops, area, yield, rainfall, risk, premium, planting window, soil pH, nitrogen, irrigation |
+| `MODEL_RESULTS.csv` | AI model performance — R², F1, RMSE, MAE, training rows, saturation |
+| `RBAC_MATRIX.csv` | Role-based access control matrix — Farmer/Buyer/Officer/Admin permissions |
+| `DATA_CLASSIFICATION.csv` | Cybersecurity data classification — Public/Private/Confidential/Restricted |
+
 ## Sources
 - Maseru district historical rainfall and temperature records
 - Crop yield trials: maize, sorghum, beans (t/ha)
@@ -15,6 +24,8 @@ Curated Lesotho farming dataset used to train/evaluate the AI assistant and yiel
 | Maize | 12 | 3.8 | 420 | moderate | 280 |
 | Beans | 8 | 2.4 | 380 | low | 190 |
 | Sorghum | 10 | 3.1 | 350 | moderate | 220 |
+| Maize | 15 | 4.2 | 450 | low | 320 |
+| Beans | 6 | 1.8 | 300 | high | 140 |
 
 ## Labels used
 - Planting window: mid-Oct to mid-Nov (maize), Dec (beans/sorghum)

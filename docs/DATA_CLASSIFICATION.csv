@@ -1,0 +1,8 @@
+module,classification,read,write
+Farm Data,Private,Farmer Officer Admin,Farmer Admin
+Marketplace,Public,All,Buyer Admin
+Insurance,Confidential,Farmer Officer Admin,Officer Admin
+Admin Control,Restricted,Admin,Admin
+Blockchain Records,Public,All,System
+Financial Records,Confidential,Farmer Officer Admin,Farmer Admin
+Crop Passport,Private,Farmer Officer Admin,Farmer Admin

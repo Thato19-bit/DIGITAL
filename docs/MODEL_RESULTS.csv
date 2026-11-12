@@ -1,0 +1,9 @@
+metric,model,score,status,notes
+R²,Random Forest,0.91,Selected,Excellent fit - production ready
+R²,XGBoost,0.89,Strong,Close second
+R²,Linear Regression,0.71,Baseline,Simple interpretability
+F1,MobileNet CNN,0.87,Disease model,Leaf disease detection
+RMSE,Random Forest,0.38 t,-,Lower is better
+MAE,Random Forest,0.24 t,-,Validation set
+Training rows,Random Forest,1240,-,Saturation at 1050
+Confidence,Yield model,91%,-,Estimated harvest outlook

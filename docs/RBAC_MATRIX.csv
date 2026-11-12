@@ -1,0 +1,5 @@
+role,farm_data,marketplace,administration,can_access_security
+Farmer,Own records,List & sell,Denied,No
+Buyer,Verified public,Buy & order,Denied,No
+Agricultural Officer,Assigned district,Read only,Verification,No
+Admin,Audit access,Moderate,Full access,Yes
