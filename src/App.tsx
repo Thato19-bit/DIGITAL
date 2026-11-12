@@ -2715,13 +2715,81 @@ function SettingsPage({
   notify: (n: Notice) => void
   go: (p: Page) => void
 }) {
+  const [tab, setTab] = useState("profile")
+  const [matrix, setMatrix] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [editing, setEditing] = useState<{ id: string; col: string } | null>(null)
+  const [editVal, setEditVal] = useState("")
+  const [gdpr, setGdpr] = useState("Consent captured at registration; data minimisation applied; right to erasure supported; breach notification within 72h; users can access, correct, and delete personal data.")
+  const [notifyEmail, setNotifyEmail] = useState(true)
+  const [notifySms, setNotifySms] = useState(false)
+  const [notifyPush, setNotifyPush] = useState(true)
+
+  const defaultMatrix = [
+    { id: "r1", role: "Farmer", farmData: "Own records", marketplace: "List & sell", administration: "Denied" },
+    { id: "r2", role: "Buyer", farmData: "Verified public", marketplace: "Buy & order", administration: "Denied" },
+    { id: "r3", role: "Agricultural Officer", farmData: "Assigned district", marketplace: "Read only", administration: "Verification" },
+    { id: "r4", role: "Admin", farmData: "Audit access", marketplace: "Moderate", administration: "Full access" },
+  ]
+
+  const columns = [
+    { key: "farmData", label: "Farm data" },
+    { key: "marketplace", label: "Marketplace" },
+    { key: "administration", label: "Administration" },
+  ]
+
+  useEffect(() => {
+    ;(async () => {
+      try {
+        const snap = await getDocs(collection(db, "security"))
+        const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
+        if (list.length === 0) {
+          for (const r of defaultMatrix) await addDoc(collection(db, "security"), r)
+          setMatrix(defaultMatrix)
+        } else {
+          setMatrix(list)
+        }
+      } catch {
+        setMatrix(defaultMatrix)
+      }
+      try {
+        const snap = await getDocs(collection(db, "gdpr"))
+        const list = snap.docs.map((d) => d.data())
+        if (list.length > 0) setGdpr(list[0].text)
+      } catch { /* use default */ }
+      setLoading(false)
+    })()
+  }, [])
+
+  const startEdit = (id: string, col: string, val: string) => {
+    setEditing({ id, col })
+    setEditVal(val)
+  }
+
+  const saveEdit = async (id: string, col: string) => {
+    setMatrix((curr) => curr.map((r) => (r.id === id ? { ...r, [col]: editVal } : r)))
+    try {
+      await setDoc(doc(db, "security", id), { [col]: editVal }, { merge: true })
+    } catch { /* fallback local */ }
+    setEditing(null)
+  }
+
+  const saveGdpr = async () => {
+    try {
+      const snap = await getDocs(collection(db, "gdpr"))
+      if (snap.empty) await addDoc(collection(db, "gdpr"), { text: gdpr })
+      else await setDoc(doc(db, "gdpr", snap.docs[0].id), { text: gdpr }, { merge: true })
+    } catch { /* fallback local */ }
+    notify({ title: "GDPR saved", text: "Privacy information updated." })
+  }
+
+  if (loading) return <div className="page"><Head kicker="Account & security" title="Settings" copy="Loading…" /></div>
+
+  const isAdmin = user.role === "Admin"
+
   return (
     <div className="page">
-      <Head
-        kicker="Account & security"
-        title="Settings"
-        copy="Manage your profile, privacy and role permissions."
-      />
+      <Head kicker="Account & security" title="Settings" copy="Manage your profile, privacy and role permissions." />
       <div className="settings-layout">
         <aside>
           {[
@@ -2731,26 +2799,12 @@ function SettingsPage({
             [ShieldCheck, "Security configuration"],
           ].map(([I, t]) => {
             const Icon = I as LucideIcon
+            const active = tab === t.toLowerCase().replace(/[^a-z]/g, "")
             return (
               <button
                 key={String(t)}
-                onClick={() => {
-                  if (t === "Security configuration") {
-                    if (user.role === "Admin") {
-                      go("security")
-                    } else {
-                      notify({
-                        title: "Admin permission required",
-                        text: `Your ${user.role} role cannot open the admin security domain.`,
-                      })
-                    }
-                  } else {
-                    notify({
-                      title: t,
-                      text: `${t} panel is active.`,
-                    })
-                  }
-                }}
+                className={active ? "primary" : "secondary"}
+                onClick={() => setTab(t.toLowerCase().replace(/[^a-z]/g, ""))}
               >
                 <Icon />
                 {String(t)}
@@ -2759,88 +2813,101 @@ function SettingsPage({
           })}
         </aside>
         <article className="card settings-card">
-          <header className="profile">
-            <span>{user.name[0]}</span>
-            <div>
-              <h3>{user.name}</h3>
-              <p>
-                {user.role} · {user.district}
-              </p>
-            </div>
-            <button
-              className="secondary"
-              onClick={() =>
-                notify({
-                  title: "Profile photo",
-                  text: "Photo selection is ready for backend upload integration.",
-                })
-              }
-            >
-              Change photo
-            </button>
-          </header>
-          <div className="form-grid">
-            <Field label="Full name">
-              <input
-                value={user.name}
-                onChange={(e) => setUser({ ...user, name: e.target.value })}
-              />
-            </Field>
-            <Field label="Phone number">
-              <input
-                value={user.phone}
-                onChange={(e) =>
-                  setUser({ ...user, phone: e.target.value })
-                }
-              />
-            </Field>
-            <Field label="Email address">
-              <input
-                value={user.email}
-                onChange={(e) =>
-                  setUser({ ...user, email: e.target.value })
-                }
-              />
-            </Field>
-            <Field label="Farming location">
-              <input
-                value={user.location}
-                onChange={(e) =>
-                  setUser({ ...user, location: e.target.value })
-                }
-              />
-            </Field>
-            <Field label="Farm size">
-              <input
-                value={user.farmSize ?? ""}
-                onChange={(e) => setUser({ ...user, farmSize: e.target.value })}
-              />
-            </Field>
-            <Field label="Farming since">
-              <input
-                type="number"
-                value={user.farmingSince ?? ""}
-                onChange={(e) =>
-                  setUser({ ...user, farmingSince: e.target.value })
-                }
-              />
-            </Field>
-          </div>
-          <button
-            className="primary save"
-            onClick={() => {
-              localStorage.setItem(
-                "climateshield-user",
-                JSON.stringify(user),
-              )
-              notify({
-                title: "Profile saved",
-                text: "Your account details were updated.",
-              })
-            }}
-          >
-            Save changes
-          </button>
+          {tab === "profile" && (
+            <>
+              <header className="profile">
+                <span>{user.name[0]}</span>
+                <div>
+                  <h3>{user.name}</h3>
+                  <p>{user.role} · {user.district}</p>
+                </div>
+                <button className="secondary" onClick={() => notify({ title: "Profile photo", text: "Photo selection is ready for backend upload integration." })}>
+                  Change photo
+                </button>
+              </header>
+              <div className="form-grid">
+                <Field label="Full name"><input value={user.name} onChange={(e) => setUser({ ...user, name: e.target.value })} /></Field>
+                <Field label="Phone number"><input value={user.phone} onChange={(e) => setUser({ ...user, phone: e.target.value })} /></Field>
+                <Field label="Email address"><input value={user.email} onChange={(e) => setUser({ ...user, email: e.target.value })} /></Field>
+                <Field label="Farming location"><input value={user.location} onChange={(e) => setUser({ ...user, location: e.target.value })} /></Field>
+                <Field label="Farm size"><input value={user.farmSize ?? ""} onChange={(e) => setUser({ ...user, farmSize: e.target.value })} /></Field>
+                <Field label="Farming since"><input type="number" value={user.farmingSince ?? ""} onChange={(e) => setUser({ ...user, farmingSince: e.target.value })} /></Field>
+              </div>
+              <button className="primary save" onClick={() => {
+                localStorage.setItem("climateshield-user", JSON.stringify(user))
+                notify({ title: "Profile saved", text: "Your account details were updated." })
+              }}>Save changes</button>
+            </>
+          )}
+          {tab === "notifications" && (
+            <>
+              <header className="profile">
+                <Bell />
+                <div><h3>Notifications</h3><p>Choose how you receive alerts.</p></div>
+              </header>
+              <div className="form-grid">
+                <Field label="Email alerts"><input type="checkbox" checked={notifyEmail} onChange={(e) => setNotifyEmail(e.target.checked)} /></Field>
+                <Field label="SMS alerts"><input type="checkbox" checked={notifySms} onChange={(e) => setNotifySms(e.target.checked)} /></Field>
+                <Field label="Push notifications"><input type="checkbox" checked={notifyPush} onChange={(e) => setNotifyPush(e.target.checked)} /></Field>
+              </div>
+              <button className="primary save" onClick={() => {
+                notify({ title: "Notifications saved", text: "Your alert preferences were updated." })
+              }}>Save notification preferences</button>
+            </>
+          )}
+          {tab === "privacygdpr" && (
+            <>
+              <header className="profile">
+                <LockKeyhole />
+                <div><h3>Privacy &amp; GDPR</h3><p>Your data rights and compliance information.</p></div>
+              </header>
+              <div className="card">
+                <textarea className="input" value={gdpr} onChange={(e) => setGdpr(e.target.value)} rows={4} style={{ width: "100%", marginBottom: 8 }} />
+                <button className="primary" onClick={saveGdpr}>Save privacy information</button>
+              </div>
+              <p style={{ fontSize: 11, color: "#666", marginTop: 8 }}>Consent captured at registration · data minimisation · right to erasure · 72h breach notice · user access/correction/deletion</p>
+            </>
+          )}
+          {tab === "securityconfiguration" && (
+            <>
+              <header className="profile">
+                <ShieldCheck />
+                <div><h3>Security configuration</h3><p>Role-based read/write permissions (admin domain).</p></div>
+              </header>
+              <div className="card">
+                <table className="table">
+                  <thead>
+                    <tr><th>Role</th>{columns.map((c) => <th key={c.key}>{c.label}</th>)}</tr>
+                  </thead>
+                  <tbody>
+                    {matrix.map((r) => (
+                      <tr key={r.id}>
+                        <td>{r.role}</td>
+                        {columns.map((c) => (
+                          <td key={c.key}>
+                            {editing?.id === r.id && editing?.col === c.key ? (
+                              <input className="input" value={editVal} onChange={(e) => setEditVal(e.target.value)} />
+                            ) : (
+                              r[c.key]
+                            )}
+                          </td>
+                        ))}
+                        <td>
+                          {columns.map((c) => (
+                            <button key={c.key} className="secondary" onClick={() => startEdit(r.id, c.key, r[c.key])} style={{ fontSize: 10, padding: "2px 6px", marginRight: 2 }}>Edit</button>
+                          ))}
+                          {editing?.id === r.id && (
+                            <button className="primary" onClick={() => columns.forEach((c) => saveEdit(r.id, c.key))} style={{ fontSize: 10, padding: "2px 6px", marginLeft: 2 }}>Save row</button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <p style={{ fontSize: 11, color: "#666", marginTop: 8 }}>{isAdmin ? "You can edit any cell above." : "View only — contact an Admin to change permissions."}</p>
+            </>
+          )}
         </article>
       </div>
     </div>
